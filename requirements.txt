@@ -1,0 +1,4 @@
+astropy==5.2.1
+import scipy==1.10.0
+matplotlib==3.6.3
+numpy==1.24.2
