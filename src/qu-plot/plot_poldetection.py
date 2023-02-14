@@ -1,7 +1,7 @@
 import matplotlib.pylab as pl
 from scipy.optimize import minimize
 
-from .faraday.faraday_stuff import *
+from .faraday.faraday_reconstructor import *
 from .io import QUdata
 from .utils import QUcfg
 
