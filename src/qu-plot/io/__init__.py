@@ -1,1 +1,1 @@
-from .dataio import QUdata
+from .los_io import QUdata
