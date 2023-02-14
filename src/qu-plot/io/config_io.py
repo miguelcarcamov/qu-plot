@@ -1,40 +1,29 @@
-import argparse
 import ast
-import configparser as ConfigParser
 import os
+from configparser import ConfigParser
+from dataclasses import dataclass, field
+
+from .io import Io
 
 
-class QUcfg:
-    def __init__(self):
-        return
+@dataclass
+class ConfigIo(Io):
+    fit_type: str = field(init=False)
+    data_path: str = field(init=False)
+    data_file: str = field(init=False)
+    cat_path: str = field(init=False)
+    cat_file: str = field(init=False)
+    bkg_corr: bool = field(init=False)
+    pol_frac: bool = field(init=False)
+    rm_path: str = field(init=False)
+    plot_path: str = field(init=False)
 
-    # ----------------------------------------------------------
+    def __post_init__(self):
+        super().__init__()
 
-    def parse_args(self):
-        """
-        Parse the command line arguments
-        """
-        parser = argparse.ArgumentParser()
-        parser.add_argument(
-            "-C",
-            "--config",
-            default="myconfig.txt",
-            required=True,
-            help="Name of the input config file",
-        )
-        parser.add_argument(
-            "-S", "--srcid", default=None, required=False, help="Source ID"
-        )
-
-        args, __ = parser.parse_known_args()
-
-        return vars(args)
-
-    # -----------------------------------------------------------
-
-    def parse_config(self, filename):
-
-        config = ConfigParser.ConfigParser(allow_no_value=True)
+    @staticmethod
+    def __parse_config(filename):
+        config = ConfigParser(allow_no_value=True)
         config.read(filename)
 
         # Build a nested dictionary with tasknames at the top level
@@ -62,19 +51,22 @@ class QUcfg:
 
         return taskvals, config
 
-    # -----------------------------------------------------------
+    def read(self):
+        self.read_cfg(self.input_name)
+
+    def write(self):
+        pass
 
     def read_cfg(self, cfg_file):
 
-        # vars = parse_args()
-        config_dict, config = self.parse_config(cfg_file)
+        config_dict, config = self.__parse_config(cfg_file)
 
         self.fit_type = config_dict["data"]["type"]
         self.data_path = config_dict["data"]["path"]
         if self.fit_type == "single":
             self.data_file = config_dict["data"]["file"]
-        self.catpath = config_dict["data"]["catpath"]
-        self.catfile = config_dict["data"]["catfile"]
+        self.cat_path = config_dict["data"]["catpath"]
+        self.cat_file = config_dict["data"]["catfile"]
 
         self.bkg_corr = config_dict["data"]["bkg_correction"]
         self.pol_frac = config_dict["data"]["pol_frac"]
@@ -90,8 +82,9 @@ class QUcfg:
         if "plots" in config_dict:
             self.plot_path = config_dict["plots"]["path"]
             if not os.path.exists(self.plot_path):
-                print("Path to plotting outputs does not exist - please correct path")
-                quit()
+                raise FileNotFoundError(
+                    "Path to plotting outputs does not exist - please correct path"
+                )
 
             self.plot_raw = config_dict["plots"]["rawdata"]
             self.plot_fd = config_dict["plots"]["fdspec"]

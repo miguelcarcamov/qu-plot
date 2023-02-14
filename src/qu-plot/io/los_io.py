@@ -3,13 +3,13 @@ from dataclasses import dataclass, field
 import numpy as np
 from astropy import constants as const
 
-from ..utils import QUcfg
+from .config_io import ConfigIo
 from .io import Io
 
 
 @dataclass
-class QUdata(Io):
-    _cfg: QUcfg = None
+class LOSIo(Io):
+    cfg: ConfigIo = None
     nu: np.ndarray = field(init=False)
     lambda_squared: np.ndarray = field(init=False)
     stokes_I: np.ndarray = field(init=False)
@@ -21,11 +21,11 @@ class QUdata(Io):
 
     def __post_init__(self):
         super().__init__()
-        if self._cfg is not None:
+        if self.cfg is not None:
             self._read_data()
 
     def read(self):
-        if self._cfg is not None:
+        if self.cfg is not None:
             self._read_data()
         else:
             raise ValueError("Configuration object has not been instanced")
@@ -36,7 +36,7 @@ class QUdata(Io):
     def _read_data(self) -> None:
 
         # freq       I        Q        U        V        N
-        data = np.loadtxt(self._cfg.data_path + self._cfg.data_file)
+        data = np.loadtxt(self.cfg.data_path + self.cfg.data_file)
         self.nu = data[:, 0] * 1e6
         self.stokes_I = data[:, 1]  # stokes I in file is Russ' model, not the raw data
         self.stokes_Qn = data[:, 2]
@@ -47,11 +47,11 @@ class QUdata(Io):
         V_bkg = data[:, 7]
         self.noise = data[:, 8]
 
-        if self._cfg.bkg_corr:
+        if self.cfg.bkg_corr:
             self.stokes_Qn -= Q_bkg
             self.stokes_Un -= U_bkg
 
-        if self._cfg.pol_frac:
+        if self.cfg.pol_frac:
             self.stokes_Qn *= 100.0 / self.stokes_I
             self.stokes_Un *= 100.0 / self.stokes_I
             self.noise *= 100.0 / self.stokes_I
