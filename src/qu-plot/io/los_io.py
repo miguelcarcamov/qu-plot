@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from astropy import constants as const
+from csromer.base import Dataset
 
 from .config_io import ConfigIo
 from .io import Io
@@ -17,7 +18,6 @@ class LOSIo(Io):
     stokes_Un: np.ndarray = field(init=False)
     stokes_Vn: np.ndarray = field(init=False)
     noise: np.ndarray = field(init=False)
-    norm: float = field(init=False)
 
     def __post_init__(self):
         super().__init__()
@@ -27,6 +27,13 @@ class LOSIo(Io):
     def read(self):
         if self.cfg is not None:
             self._read_data()
+            nu = self.nu
+            p = self.stokes_Qn[::-1] + 1j * U[::-1]
+            sigma_qu = self.noise[::-1]
+
+            dataset = Dataset(nu=nu, data=p, sigma=sigma_qu, spectral_idx=0.7)
+
+            return dataset
         else:
             raise ValueError("Configuration object has not been instanced")
 
@@ -58,21 +65,3 @@ class LOSIo(Io):
 
         # make data in lambda^2:
         self.lambda_squared = (const.c.value / self.nu) ** 2
-
-    def _norm_data(self):
-
-        self.norm = np.max(
-            [np.max(np.abs(self.stokes_Qn)), np.max(np.abs(self.stokes_Un))]
-        )
-
-        self.stokes_Qn /= self.norm
-        self.stokes_Un /= self.norm
-        self.noise /= self.norm
-
-    def _unormalize_data(self, in_q, in_u, in_noise):
-
-        out_q = in_q * self.norm
-        out_u = in_u * self.norm
-        out_noise = in_noise * self.norm
-
-        return out_q, out_u, out_noise
