@@ -35,9 +35,7 @@ class CSROMERReconstructor(FaradayReconstructor):
 
     def config_fd_space(self, cellsize: float = None, oversampling: float = None):
         if cellsize is not None and oversampling is not None:
-            self.parameter.calculate_cellsize(
-                dataset=self.dataset, oversampling=cellsize
-            )
+            self.parameter.calculate_cellsize(dataset=self.dataset, cellsize=cellsize)
         elif cellsize is None and oversampling is not None:
             self.parameter.calculate_cellsize(
                 dataset=self.dataset, oversampling=oversampling
