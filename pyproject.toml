@@ -3,7 +3,7 @@ requires = ["setuptools>=65.5.0", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pyralysis"
+name = "qu_plot"
 authors = [
     {name = "Anna Scaife", email = "anna.scaife@manchester.ac.uk"},
 ]
@@ -28,8 +28,8 @@ include-package-data = false
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["qu-plot*"]
+include = ["qu_plot*"]
 namespaces = false
 
 [tool.setuptools_scm]
-write_to = "src/pyralysis/_version.py"
+write_to = "src/qu_plot/_version.py"

@@ -1,6 +1,6 @@
 astropy==5.2.1
-git+https://github.com/mb010/Cata2Data@master#egg=cata2data
-git+https://github.com/miguelcarcamov/csromer@development#egg=csromer
+Cata2Data@git+https://github.com/mb010/Cata2Data@main#egg=cata2data
+csromer@git+https://github.com/miguelcarcamov/csromer@development#egg=csromer
 matplotlib==3.6.3
 numpy==1.24.2
 scipy==1.10.0
