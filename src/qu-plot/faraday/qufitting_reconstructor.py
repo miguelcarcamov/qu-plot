@@ -5,6 +5,9 @@ from .faraday_reconstructor import FaradayReconstructor
 
 @dataclass
 class QUFittingReconstructor(FaradayReconstructor):
+    def __post_init__(self):
+        super().__init__()
+
     def config_fd_space(self):
         pass
 
