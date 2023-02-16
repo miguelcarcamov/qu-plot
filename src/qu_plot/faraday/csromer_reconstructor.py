@@ -1,7 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
-from csromer.base import Dataset
 from csromer.dictionaries import Wavelet
 from csromer.objectivefunction import L1, TSV, TV, Chi2, OFunction
 from csromer.optimization import FISTA
@@ -14,23 +13,32 @@ from .faraday_reconstructor import FaradayReconstructor
 
 @dataclass(init=True, repr=True)
 class CSROMERReconstructor(FaradayReconstructor):
-    dataset: Dataset = None
-    parameter: Parameter = None
+    parameter: Parameter = field(init=False)
     flagger: Flagger = None
-    dft: NDFT1D = None
-    nufft: NUFFT1D = None
+    dft: NDFT1D = field(init=False)
+    nufft: NUFFT1D = field(init=False)
     wavelet: Wavelet = None
-    coefficients: np.ndarray = None
-    fd_restored: np.ndarray = None
-    fd_model: np.ndarray = None
-    fd_residual: np.ndarray = None
+    coefficients: np.ndarray = field(init=False)
+    fd_restored: np.ndarray = field(init=False)
+    rm_restored: float = field(init=False)
+    restored_peak_quadratic_interpolation: float = field(init=False)
+    rm_restored_quadratic_interpolation: float = field(init=False)
+    fd_model: np.ndarray = field(init=False)
+    rm_model: float = field(init=False)
+    fd_residual: np.ndarray = field(init=False)
+    fd_dirty: np.ndarray = field(init=False)
+    rm_dirty: float = field(init=False)
+    second_moment: float = field(init=False)
     cellsize: float = None
     oversampling: float = None
     lambda_l_norm: float = None
 
     def __post_init__(self):
-        super().__init__()
+        if self.oversampling is None:
+            self.oversampling = 7.0
         self.parameter = Parameter()
+        self.config_fd_space(self.cellsize, self.oversampling)
+        self.config_fourier_transforms()
 
     def flag_dataset(self, flagger: Flagger = None):
 
@@ -65,9 +73,17 @@ class CSROMERReconstructor(FaradayReconstructor):
     def get_rmtf(self):
         return self.dft.RMTF()
 
+    def get_rm(self, fd_data):
+        return self.parameter.phi[np.argmax(np.abs(fd_data))]
+
     def reconstruct(self):
+        if self.flagger:
+            self.flag_dataset()
+
         fd_dirty = self.get_dirty_faraday_depth()
+        self.fd_dirty = fd_dirty
         self.parameter.data = fd_dirty
+        self.rm_dirty = self.get_rm(fd_dirty)
         self.parameter.complex_data_to_real()
 
         if self.wavelet is not None:
@@ -115,20 +131,31 @@ class CSROMERReconstructor(FaradayReconstructor):
             self.coefficients = X.data
             X.data = self.wavelet.reconstruct(X.data)
 
-        self.fd_model = X.real_data_to_complex()
+        X.real_data_to_complex()
+
+        self.fd_model = X.data
+        self.rm_model = self.get_rm(self.fd_model)
+        self.second_moment = self.calculate_second_moment()
 
         self.fd_residual = self.dft.backward(
             self.dataset.data - self.dataset.model_data
         )
 
         self.fd_restored = X.convolve() + self.fd_residual
+        self.rm_restored = self.get_rm(self.fd_restored)
+        (
+            self.rm_restored_quadratic_interpolation,
+            self.restored_peak_quadratic_interpolation,
+        ) = self.estimate_peak_quadratic_interpolation(
+            self.fd_restored, self.parameter.cellsize
+        )
 
     def calculate_second_moment(self):
         fd_model_abs = np.abs(self.fd_model)
         k_parameter = np.sum(fd_model_abs)
         first_moment = np.sum(self.parameter.phi * fd_model_abs) / k_parameter
         second_moment = (
-            np.sum((self.parameter.phi - first_moment) ** 2 * fd_model_abs)
+            np.sum(fd_model_abs * (self.parameter.phi - first_moment) ** 2)
             / k_parameter
         )
 
