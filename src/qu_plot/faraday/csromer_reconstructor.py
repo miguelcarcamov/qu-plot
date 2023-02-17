@@ -151,12 +151,16 @@ class CSROMERReconstructor(FaradayReconstructor):
         )
 
     def calculate_second_moment(self):
-        fd_model_abs = np.abs(self.fd_model)
+        phi_nonzero_positions = np.abs(self.fd_model) != 0
+        phi_nonzero = self.parameter.phi[phi_nonzero_positions]
+        fd_model_nonzero = self.fd_model[phi_nonzero_positions]
+
+        fd_model_abs = np.abs(fd_model_nonzero)
         k_parameter = np.sum(fd_model_abs)
-        first_moment = np.sum(self.parameter.phi * fd_model_abs) / k_parameter
+        first_moment = np.sum(phi_nonzero * fd_model_abs) / k_parameter
+
         second_moment = (
-            np.sum(fd_model_abs * (self.parameter.phi - first_moment) ** 2)
-            / k_parameter
+            np.sum(fd_model_abs * (phi_nonzero - first_moment) ** 2) / k_parameter
         )
 
         return second_moment
