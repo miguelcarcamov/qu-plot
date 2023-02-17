@@ -28,6 +28,8 @@ class CSROMERReconstructor(FaradayReconstructor):
     fd_residual: np.ndarray = field(init=False)
     fd_dirty: np.ndarray = field(init=False)
     rm_dirty: float = field(init=False)
+    dirty_peak_quadratic_interpolation: float = field(init=False)
+    rm_dirty_quadratic_interpolation: float = field(init=False)
     second_moment: float = field(init=False)
     cellsize: float = None
     oversampling: float = None
@@ -84,6 +86,12 @@ class CSROMERReconstructor(FaradayReconstructor):
         self.fd_dirty = fd_dirty
         self.parameter.data = fd_dirty
         self.rm_dirty = self.get_rm(fd_dirty)
+        (
+            self.rm_dirty_quadratic_interpolation,
+            self.dirty_peak_quadratic_interpolation,
+        ) = self.estimate_peak_quadratic_interpolation(
+            fd_dirty, self.parameter.cellsize
+        )
         self.parameter.complex_data_to_real()
 
         if self.wavelet is not None:
