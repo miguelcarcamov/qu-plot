@@ -34,7 +34,7 @@ class LOSIo(Io):
         p = self.stokes_Qn[::-1] + 1j * self.stokes_Un[::-1]
         sigma_qu = self.noise[::-1]
 
-        dataset = Dataset(nu=nu, data=p, sigma=sigma_qu, spectral_idx=0.7)
+        dataset = Dataset(nu=nu, data=p, sigma=sigma_qu, spectral_idx=0.0)
 
         return dataset
 
